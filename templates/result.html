@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Hasil Prediksi</title>
+    <style>
+        body { font-family: Arial; text-align: center; margin: 50px; background: #f4f4f9; }
+        .card { background: white; padding: 30px; border-radius: 10px; display: inline-block; }
+        h2 { color: #333; }
+        a { text-decoration: none; color: white; background: #007bff; padding: 10px 20px; border-radius: 5px; }
+        a:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Hasil Prediksi</h2>
+        <p><strong>{{ result }}</strong></p>
+        <p>Peluang Stroke: {{ probability }}%</p>
+        <a href="/">← Kembali</a>
+    </div>
+</body>
+</html>

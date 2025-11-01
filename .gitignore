@@ -1,0 +1,25 @@
+# Folder virtual environment
+venv/
+
+# Cache & temp
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Dataset besar
+*.csv
+*.xlsx
+*.xls
+
+# File model dan sementara
+*.pkl
+*.sav
+
+# Environment config
+.env
+
+# Output & cache IDE
+.vscode/
+.idea/
