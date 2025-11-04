@@ -13,25 +13,29 @@ import joblib
 # ===============================
 # 1️⃣ LOAD DATA
 # ===============================
-df = pd.read_csv("healthcare-dataset-stroke-data.csv")
+print("Memuat dataset...")
+df = pd.read_csv("train.csv")
 
 # ===============================
 # 2️⃣ DATA PREPROCESSING
 # ===============================
-# Hapus kolom id
-if "id" in df.columns:
-    df = df.drop("id", axis=1)
+print("Melakukan preprocessing data...")
+
+# Hapus kolom yang tidak diperlukan
+df = df.drop(['PassengerId', 'Name', 'Ticket', 'Cabin'], axis=1)
 
 # Isi missing values
-df["bmi"] = df["bmi"].fillna(df["bmi"].median())
+df['Age'] = df['Age'].fillna(df['Age'].median())
+df['Fare'] = df['Fare'].fillna(df['Fare'].median())
+df['Embarked'] = df['Embarked'].fillna('S')  # Isi dengan modus
 
 # Pisahkan fitur dan target
-X = df.drop("stroke", axis=1)
-y = df["stroke"]
+X = df.drop('Survived', axis=1)
+y = df['Survived']
 
 # Tentukan kolom kategori dan numerik
-categorical_cols = X.select_dtypes(include=["object"]).columns.tolist()
-numerical_cols = X.select_dtypes(exclude=["object"]).columns.tolist()
+categorical_cols = ['Sex', 'Embarked']
+numerical_cols = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare']
 
 # ===============================
 # 3️⃣ PIPELINE: ENCODING + SCALING + MODEL
@@ -80,23 +84,27 @@ print(confusion_matrix(y_test, y_pred))
 fpr, tpr, _ = roc_curve(y_test, y_proba)
 roc_auc = auc(fpr, tpr)
 
+# Simpan ROC Curve ke file
 plt.figure(figsize=(6, 5))
 plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
 plt.plot([0, 1], [0, 1], linestyle="--", color="gray")
 plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
-plt.title("ROC Curve - Stroke Prediction")
+plt.title("ROC Curve - Titanic Survival Prediction")
 plt.legend()
-plt.show()
+plt.grid(True)
+plt.savefig('static/roc_auc.png')
+plt.close()
 
 import os
 
-# Grafik distribusi stroke
-plt.figure(figsize=(5,4))
-sns.countplot(x='stroke', data=df, palette='Set2')
-plt.title('Distribusi Kasus Stroke')
+# Grafik distribusi penumpang berdasarkan kelangsungan hidup
+plt.figure(figsize=(5, 4))
+sns.countplot(x='Survived', data=df, hue='Survived', palette='Set2', legend=False)
+plt.title('Distribusi Penumpang Berdasarkan Kelangsungan Hidup')
 plt.savefig('static/distribusi.png')
 plt.close()
+
 
 # Confusion matrix visual
 cm = confusion_matrix(y_test, y_pred)
@@ -109,11 +117,33 @@ plt.savefig('static/confusion.png')
 plt.close()
 
 
+# Feature Importance
+rf_model = clf.named_steps["model"]
+feature_columns = list(clf.named_steps["preprocessor"].get_feature_names_out())
+importances = rf_model.feature_importances_
+
+# Buat DataFrame untuk feature importance
+feature_importance_df = pd.DataFrame({
+    'feature': feature_columns,
+    'importance': importances
+}).sort_values('importance', ascending=False)
+
+# Visualisasi Feature Importance
+plt.figure(figsize=(8, 6))
+sns.barplot(data=feature_importance_df, y='feature', x='importance', hue='feature', palette='viridis', legend=False)
+plt.title("Feature Importance - Random Forest Model")
+plt.xlabel("Importance")
+plt.ylabel("Features")
+plt.tight_layout()
+plt.savefig('static/feature_importance.png')
+plt.close()
+
+
 # ===============================
 # 6️⃣ SIMPAN MODEL DAN OBJEK LAINNYA
 # ===============================
 # Simpan pipeline model (sudah termasuk encoder dan scaler)
-joblib.dump(clf, "model_stroke_rf.pkl")
+joblib.dump(clf, "titanic_model.pkl")
 
 # Simpan kolom fitur
 feature_columns = list(clf.named_steps["preprocessor"].get_feature_names_out())
@@ -123,7 +153,14 @@ joblib.dump(feature_columns, "feature_columns.pkl")
 encoder = clf.named_steps["preprocessor"].named_transformers_["cat"]
 scaler = clf.named_steps["preprocessor"].named_transformers_["num"]
 
-joblib.dump(encoder, "encoder.pkl")
-joblib.dump(scaler, "scaler.pkl")
+joblib.dump(encoder, "titanic_encoder.pkl")
+joblib.dump(scaler, "titanic_scaler.pkl")
 
-print("\n✅ Model dan semua file pendukung berhasil disimpan!")
+print("\n[OK] Model prediksi kelangsungan hidup Titanic dan semua file pendukung berhasil disimpan!")
+print("File yang disimpan:")
+print(f"- Model: titanic_model.pkl")
+print(f"- Daftar fitur: feature_columns.pkl")
+print(f"- Encoder: titanic_encoder.pkl")
+print(f"- Scaler: titanic_scaler.pkl")
+print("\nSemua grafik berhasil disimpan!")
+

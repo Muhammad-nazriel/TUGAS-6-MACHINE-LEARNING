@@ -5,27 +5,45 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 import pandas as pd
 
-# Contoh data — ganti dengan dataset kamu
-df = pd.read_csv("healthcare-dataset-stroke-data.csv")
+# Load dataset Titanic
+print("Memuat dataset Titanic...")
+df = pd.read_csv("train.csv")
 
-X = df.drop('stroke', axis=1)
-y = df['stroke']
+# Preprocessing data
+print("Melakukan preprocessing...")
+# Isi missing values
+df['Age'] = df['Age'].fillna(df['Age'].median())
+df['Fare'] = df['Fare'].fillna(df['Fare'].median())
+df['Embarked'] = df['Embarked'].fillna('S')  # Isi dengan modus
 
-num_cols = X.select_dtypes(include=['int64', 'float64']).columns
-cat_cols = X.select_dtypes(include=['object']).columns
+# Pilih kolom yang akan digunakan: Pclass, Age, Sex, Fare, Embarked
+X = df[['Pclass', 'Age', 'Sex', 'Fare', 'Embarked']]
+y = df['Survived']
 
+# Tentukan kolom kategori dan numerik
+categorical_cols = ['Sex', 'Embarked']
+numerical_cols = ['Pclass', 'Age', 'Fare']
+
+# Buat preprocessor
 preprocessor = ColumnTransformer([
-    ('num', StandardScaler(), num_cols),
-    ('cat', OneHotEncoder(handle_unknown='ignore'), cat_cols)
+    ('num', StandardScaler(), numerical_cols),
+    ('cat', OneHotEncoder(handle_unknown='ignore', drop='first'), categorical_cols)
 ])
 
+# Buat pipeline dengan model
 model = Pipeline([
     ('preprocessor', preprocessor),
-    ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))
+    ('classifier', RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced'))
 ])
 
+print("Melatih model...")
 model.fit(X, y)
 
 # Simpan model
-joblib.dump(model, 'stroke_model.pkl')
-print("✅ Model disimpan sebagai stroke_model.pkl")
+joblib.dump(model, 'titanic_model.pkl')
+print("[OK] Model disimpan sebagai titanic_model.pkl")
+
+# Simpan nama kolom fitur untuk referensi
+feature_names = list(model.named_steps['preprocessor'].get_feature_names_out())
+joblib.dump(feature_names, 'feature_columns.pkl')
+print("[OK] Feature columns disimpan sebagai feature_columns.pkl")
